@@ -1,25 +1,60 @@
-# 🏗️ System Design Architecture Portfolio
+# 🚀 The System Design Playbook
 
-A structured collection of High-Level Design (HLD) architectures, exploring scalability, fault tolerance, and performance optimization for various distributed systems.
+Welcome to my daily High-Level Design (HLD) practice repository. This repo documents my journey from writing feature-level code to designing scalable, fault-tolerant, and globally distributed systems. 
 
-## 🌐 Typical High-Level Architecture (Reference)
+**Goal:** Solve and document 2 comprehensive system design problems per week, heavily focusing on trade-offs, bottlenecks, and capacity planning.
+
+---
+
+## 🏗️ 1. The Global Architecture Blueprint
+
+This is the standard, battle-tested microservices architecture pattern I use as a baseline for read-heavy and write-heavy applications.
 
 ```mermaid
-graph TD
-    Client[Client / Mobile App] -->|HTTPS| Route53[DNS / Cloudflare]
-    Route53 --> LB[Load Balancer / Nginx]
-    LB --> API[API Gateway]
+flowchart TB
+    subgraph Client Tier
+        Mobile[📱 Mobile App React Native]
+        Web[💻 Web App React.js]
+    end
+
+    subgraph Edge / Network Tier
+        CDN[🌐 CDN / Cloudflare]
+        Route53[🗺️ DNS]
+        CDN <--> Route53
+    end
+
+    subgraph API / Load Balancing Tier
+        Nginx[🚦 Nginx Reverse Proxy / Load Balancer]
+        Gateway[🚪 API Gateway]
+    end
+
+    subgraph Compute / Service Tier
+        Auth[🔐 Auth Service Node.js / Express]
+        CoreAPI[⚙️ Core Service FastAPI]
+        Payment[💳 Payment Gateway Razorpay]
+    end
+
+    subgraph Data / Caching Tier
+        Redis[(⚡ Redis Cache)]
+        MongoPrimary[(🗄️ MongoDB Primary)]
+        MongoReplica[(🗂️ MongoDB Read Replica)]
+        S3[📦 AWS S3 / Blob Storage]
+    end
+
+    %% Connections
+    Client Tier -->|HTTPS| Edge / Network Tier
+    Edge / Network Tier -->|Traffic Routing| Nginx
+    Nginx --> Gateway
     
-    API --> App1[App Server 1 / Node.js]
-    API --> App2[App Server 2 / FastAPI]
+    Gateway --> Auth
+    Gateway --> CoreAPI
+    Gateway --> Payment
     
-    App1 --> Cache[(Redis Cache)]
-    App2 --> Cache
+    CoreAPI --> Redis
+    Auth --> Redis
     
-    App1 --> DB[(Primary DB / MongoDB)]
-    App2 --> DB
+    CoreAPI -->|Writes| MongoPrimary
+    CoreAPI -->|Reads| MongoReplica
+    MongoPrimary -.->|Async Sync| MongoReplica
     
-    DB -.->|Asynchronous Replication| ReadDB[(Read Replica)]
-    
-    App1 --> MQ[Message Queue / Kafka]
-    MQ --> Worker[Background Workers]
+    CoreAPI -->|Media Uploads| S3
